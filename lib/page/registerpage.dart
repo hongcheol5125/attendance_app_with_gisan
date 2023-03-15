@@ -11,7 +11,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final formKey = GlobalKey<FormState>();
   // 값을 저장할 위치
-  String name = '';
+  String id = '';
   String password = '';
   String nickname = '';
 
@@ -23,13 +23,14 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register'),
+        title: Text('회원가입'),
         backgroundColor: Colors.orange,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
+            // textformfield를 쓰려면 Form이 무조건 필요!
             Form(
               key: this.formKey,
               child: SingleChildScrollView(
@@ -40,7 +41,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       label: '아이디',
                       onSaved: (val) {
                         setState(() {
-                          this.name = val;
+                          this.id = val;
                         });
                       },
                       validator: (val) {
