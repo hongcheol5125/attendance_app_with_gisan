@@ -3,37 +3,6 @@ import 'package:attendance_app/page/registerpage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class GetUserName extends StatelessWidget {
-  final String documentId;
-
-  GetUserName(this.documentId);
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<DocumentSnapshot>(
-      future:
-          FirebaseFirestore.instance.collection('users').doc(documentId).get(),
-      builder:
-          (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-        if (snapshot.hasError) {
-          return Text("Something went wrong");
-        }
-
-        if (snapshot.hasData && !snapshot.data!.exists) {
-          return Text("Document does not exist");
-        }
-
-        if (snapshot.connectionState == ConnectionState.done) {
-          Map<String, dynamic> data =
-              snapshot.data!.data() as Map<String, dynamic>;
-          return Text("Full Name: ${data['full_name']} ${data['last_name']}");
-        }
-
-        return Text("loading");
-      },
-    );
-  }
-}
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -46,11 +15,11 @@ class _HomePageState extends State<HomePage> {
   TextEditingController _idController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
 
+// 실시간으로 DB에서 알려줌
   Stream collectionStream =
       FirebaseFirestore.instance.collection('users').snapshots();
   Stream documentStream = FirebaseFirestore.instance
       .collection('users')
-      .doc('hongcheol')
       .snapshots();
 
   // 캘린더페이지로 가기
@@ -75,16 +44,15 @@ class _HomePageState extends State<HomePage> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  // Firebase에서 id, password 가져오기(Read)
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // GestureDetector, FocusScope : 키보드 이외의 부분 누르면 키보드 사라지게 함(l.84, 85)
+        // GestureDetector, FocusScope : 키보드 이외의 부분 누르면 키보드 사라지게 함(l.52, 53)
         body: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SingleChildScrollView(
-              child: Column(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SingleChildScrollView(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
@@ -96,13 +64,19 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.only(right: 10, left: 10),
                 child: Row(
                   children: [
-                    Text('id : '),
+                    Text(
+                      'id : ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                     Expanded(
                       child: TextField(
                         controller: _idController,
                         decoration: InputDecoration(
                             hintText: 'Write down your id',
-                            border: OutlineInputBorder(),
+                            border: OutlineInputBorder(), // TextField 테두리 모두 감쌈
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.clear),
                               onPressed: () {
@@ -121,7 +95,11 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.only(right: 10, left: 10),
                 child: Row(
                   children: [
-                    Text('Password : '),
+                    Text('Password : ',
+                     style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),),
                     Expanded(
                       child: TextField(
                         obscureText: true,
@@ -147,36 +125,6 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   MaterialButton(
-                    onPressed: () async {
-                      String? idFromFireStore;
-                      String? pwFromFireStore;
-                      if (_idController.text == "") {
-                        showSnackBar("아이디를 입력해주세요");
-                      } else {
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(_idController.text)
-                            .get()
-                            .then((value) {
-                          if (value.exists) {
-                            Map<String, dynamic> data =
-                                value.data() as Map<String, dynamic>;
-                            idFromFireStore = data['id'];
-                            pwFromFireStore = data['password'];
-                          }
-                        });
-        
-                        if (idFromFireStore != _idController.text) {
-                          showSnackBar("아이디가 존재하지 않습니다");
-                        } else {
-                          if (pwFromFireStore != _passwordController.text) {
-                            showSnackBar("비밀번호가 일치하지 않습니다");
-                          } else {
-                            goToCalendarPage();
-                          }
-                        }
-                      }
-                    },
                     child: Container(
                       decoration: BoxDecoration(
                           color: Colors.orange,
@@ -192,6 +140,37 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    onPressed: () async {
+                      String? idFromFireStore;
+                      String? pwFromFireStore;
+                      if (_idController.text == "") {
+                        showSnackBar("아이디를 입력해주세요");
+                      } else {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(_idController.text)
+                            .get()
+                            .then((value) {
+                          if (value.exists) {        // 만약, value가 존재하면 firestore에서 map 형태로 data를 가져온 후 data의 id부분을 idFromFireStore로 한다
+                            Map<String, dynamic> data =
+                                value.data() as Map<String, dynamic>;
+                            idFromFireStore = data['id'];
+                            pwFromFireStore = data['password'];
+                          }
+                        });
+
+                        if (idFromFireStore != _idController.text) {
+                          showSnackBar("아이디가 존재하지 않습니다");
+                        } else {
+                          if (pwFromFireStore != _passwordController.text) {
+                            showSnackBar("비밀번호가 일치하지 않습니다");
+                          } else {
+                            goToCalendarPage();
+                          }
+                        }
+                      }
+                    },
+                    
                   ),
                 ],
               ),
@@ -208,9 +187,9 @@ class _HomePageState extends State<HomePage> {
               ),
             )
           ],
-              ),
-            ),
-        ));
+        ),
+      ),
+    ));
     ;
   }
 }

@@ -11,7 +11,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final formKey = GlobalKey<FormState>();
   // 값을 저장할 위치
-  String id = '';
+  String id =
+      ''; // id가 non-nullable이므로 비워두면 안되니까 <=''> 해준 것! ( late로 해서 나중에 쓸 때 지정 해 줘도 된다)
   String password = '';
   String nickname = '';
 
@@ -33,56 +34,59 @@ class _RegisterPageState extends State<RegisterPage> {
             // textformfield를 쓰려면 Form이 무조건 필요!
             Form(
               key: this.formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    renderTextFormField(
-                      controller: _idController,
-                      label: '아이디',
-                      onSaved: (val) {
-                        setState(() {
-                          this.id = val;
-                        });
-                      },
-                      validator: (val) {
-                        if (val.length < 1) {
-                          return '필수 필드입니다.';
-                        }
-                        return null;
-                      },
-                    ),
-                    renderTextFormField(
-                      controller: _passwordController,
-                      label: '비밀번호',
-                      onSaved: (val) {
-                        setState(() {
-                          this.password = val;
-                        });
-                      },
-                      validator: (val) {
-                        if (val.length < 1) {
-                          return '필수 필드입니다.';
-                        }
-                        return null;
-                      },
-                    ),
-                    renderTextFormField(
-                      controller: _nicknameController,
-                      label: '닉네임',
-                      onSaved: (val) {
-                        setState(() {
-                          this.nickname = val;
-                        });
-                      },
-                      validator: (val) {
-                        if (val.length < 1) {
-                          return '필수 필드입니다.';
-                        }
-                        return null;
-                      },
-                    ),
-                    renderSubmitButton(),
-                  ],
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      renderTextFormField(
+                        controller: _idController,
+                        label: '아이디',
+                        onSaved: (val) {
+                          setState(() {
+                            this.id = val;
+                          });
+                        },
+                        validator: (val) {
+                          if (val.length < 1) {
+                            return '필수 필드입니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      renderTextFormField(
+                        controller: _passwordController,
+                        label: '비밀번호',
+                        onSaved: (val) {
+                          setState(() {
+                            this.password = val;
+                          });
+                        },
+                        validator: (val) {
+                          if (val.length < 1) {
+                            return '필수 필드입니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      renderTextFormField(
+                        controller: _nicknameController,
+                        label: '닉네임',
+                        onSaved: (val) {
+                          setState(() {
+                            this.nickname = val;
+                          });
+                        },
+                        validator: (val) {
+                          if (val.length < 1) {
+                            return '필수 필드입니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      renderSubmitButton(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -105,7 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
       // }
       docs.forEach((element) {
         Map<String, dynamic> docMap = element.data() as Map<String, dynamic>;
-        if (docMap["id"] == id) {
+        if (docMap["id"] == id) {  // 파란 id는 회원이 쓴 id
           isExist = true;
         }
       });
@@ -122,9 +126,9 @@ class _RegisterPageState extends State<RegisterPage> {
         .collection('users')
         .doc(id)
         .set({
-          'id': id, // John Doe
-          'password': password, // Stokes and Sons
-          'nickname': nickname // 42
+          'id': id,     // 파란 id는 회원이 쓴 id
+          'password': password, 
+          'nickname': nickname 
         })
         .then((value) => print("User Added"))
         .catchError((error) => print("Failed to add user: $error"));
@@ -135,32 +139,6 @@ class _RegisterPageState extends State<RegisterPage> {
       content: Text(text),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  renderSubmitButton() {
-    return ElevatedButton(
-      child: Text('저장하기'),
-      onPressed: () async {
-        //만약 validation이 다 통과되면 true 리턴
-        if (this.formKey.currentState!.validate()) {
-          this.formKey.currentState!.save();
-
-          bool _isExist = await isIDExist(id: _idController.text);
-          if (_isExist == false) // need to add DB check
-          {
-            registerUserAtFireStore(
-              id: _idController.text,
-              password: _passwordController.text,
-              nickname: _nicknameController.text,
-            );
-            showSnackBar("등록 성공");
-            Navigator.pop(context);
-          } else {
-            showSnackBar("이미 존재하는 아이디입니다");
-          }
-        }
-      },
-    );
   }
 
   renderTextFormField({
@@ -194,6 +172,32 @@ class _RegisterPageState extends State<RegisterPage> {
           height: 16.0,
         )
       ],
+    );
+  }
+
+  renderSubmitButton() {
+    return ElevatedButton(
+      child: Text('저장하기'),
+      onPressed: () async {
+        //만약 validation이 다 통과되면 true 리턴
+        if (this.formKey.currentState!.validate()) {
+          this.formKey.currentState!.save();
+
+          bool _isExist = await isIDExist(id: _idController.text);  // isIDExist는 해석하려면 시간이 좀 걸리므로 async/await 필요!
+          if (_isExist == false) // need to add DB check
+          {
+            registerUserAtFireStore(
+              id: _idController.text,
+              password: _passwordController.text,
+              nickname: _nicknameController.text,
+            );
+            showSnackBar("등록 성공");
+            Navigator.pop(context);
+          } else {
+            showSnackBar("이미 존재하는 아이디입니다");
+          }
+        }
+      },
     );
   }
 }
