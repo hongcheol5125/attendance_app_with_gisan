@@ -1,8 +1,11 @@
+import 'package:attendance_app/model/user.dart';
+import 'package:attendance_app/page/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -11,8 +14,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final formKey = GlobalKey<FormState>();
   // 값을 저장할 위치
-  String id =
-      ''; // id가 non-nullable이므로 비워두면 안되니까 <=''> 해준 것! ( late로 해서 나중에 쓸 때 지정 해 줘도 된다)
+  String id = ''; // id가 non-nullable이므로 비워두면 안되니까 <=''> 해준 것! ( late로 해서 나중에 쓸 때 지정 해 줘도 된다)
   String password = '';
   String nickname = '';
 
@@ -20,11 +22,23 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
 
+  goToHomePage() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => HomePage(),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('회원가입'),
+        actions: <Widget>[
+          IconButton(onPressed: () {
+            return goToHomePage();
+          },
+           icon: const Icon(Icons.home),)
+        ],
         backgroundColor: Colors.orange,
       ),
       body: Padding(
@@ -109,7 +123,8 @@ class _RegisterPageState extends State<RegisterPage> {
       // }
       docs.forEach((element) {
         Map<String, dynamic> docMap = element.data() as Map<String, dynamic>;
-        if (docMap["id"] == id) {  // 파란 id는 회원이 쓴 id
+        User user = User.fromJson(docMap);
+        if (user.id == id) {  // 파란 id는 회원이 쓴 id
           isExist = true;
         }
       });
@@ -118,18 +133,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   registerUserAtFireStore({
-    required String id,
-    required String password,
-    required String nickname,
+    required User user
   }) {
     FirebaseFirestore.instance
         .collection('users')
-        .doc(id)
-        .set({
-          'id': id,     // 파란 id는 회원이 쓴 id
-          'password': password, 
-          'nickname': nickname 
-        })
+        .doc(id)  // 파란 id는 회원이 쓴 id
+        .set(user.toJson())
         .then((value) => print("User Added"))
         .catchError((error) => print("Failed to add user: $error"));
   }
@@ -179,6 +188,9 @@ class _RegisterPageState extends State<RegisterPage> {
     return ElevatedButton(
       child: Text('저장하기'),
       onPressed: () async {
+        User user = User(id: _idController.text,
+        password: _passwordController.text,
+        nickname: _nicknameController.text);
         //만약 validation이 다 통과되면 true 리턴
         if (this.formKey.currentState!.validate()) {
           this.formKey.currentState!.save();
@@ -187,9 +199,7 @@ class _RegisterPageState extends State<RegisterPage> {
           if (_isExist == false) // need to add DB check
           {
             registerUserAtFireStore(
-              id: _idController.text,
-              password: _passwordController.text,
-              nickname: _nicknameController.text,
+              user: user
             );
             showSnackBar("등록 성공");
             Navigator.pop(context);
